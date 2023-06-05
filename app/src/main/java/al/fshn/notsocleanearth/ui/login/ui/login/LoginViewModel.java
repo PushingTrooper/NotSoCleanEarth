@@ -4,10 +4,14 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import android.database.sqlite.SQLiteConstraintException;
+import android.os.AsyncTask;
 import android.util.Patterns;
 
 import al.fshn.notsocleanearth.R;
+import al.fshn.notsocleanearth.data.AppDatabase;
 import al.fshn.notsocleanearth.data.AppRepository;
+import al.fshn.notsocleanearth.data.model.UserLogin;
 import al.fshn.notsocleanearth.ui.login.data.LoginRepository;
 import al.fshn.notsocleanearth.ui.login.data.Result;
 import al.fshn.notsocleanearth.ui.login.data.model.LoggedInUser;
@@ -16,6 +20,7 @@ public class LoginViewModel extends ViewModel {
 
     private MutableLiveData<LoginFormState> loginFormState = new MutableLiveData<>();
     private MutableLiveData<LoginResult> loginResult = new MutableLiveData<>();
+    private MutableLiveData<LoginResult> registerResult = new MutableLiveData<>();
     private LoginRepository loginRepository;
 
     private AppRepository appRepository;
@@ -34,14 +39,35 @@ public class LoginViewModel extends ViewModel {
 
     public void login(String username, String password) {
         // can be launched in a separate asynchronous job
-        Result<LoggedInUser> result = loginRepository.login(username, password);
+        AsyncTask.execute(() -> {
+            Result<UserLogin> result = appRepository.login(username, password);
 
-        if (result instanceof Result.Success) {
-            LoggedInUser data = ((Result.Success<LoggedInUser>) result).getData();
-            loginResult.setValue(new LoginResult(new LoggedInUserView(data.getDisplayName())));
-        } else {
-            loginResult.setValue(new LoginResult(R.string.login_failed));
-        }
+            if (result instanceof Result.Success) {
+                UserLogin data = ((Result.Success<UserLogin>) result).getData();
+                loginResult.postValue(new LoginResult(new LoggedInUserView(data.email)));
+            } else {
+                loginResult.postValue(new LoginResult(R.string.login_failed));
+            }
+        });
+    }
+
+    public void register(String username, String password, String confirmPassword) {
+        // can be launched in a separate asynchronous job
+        AsyncTask.execute(() -> {
+            try {
+                Result<UserLogin> result = appRepository.registerNewUser(username, password);
+
+                if (result instanceof Result.Success) {
+                    UserLogin data = ((Result.Success<UserLogin>) result).getData();
+                    loginResult.postValue(new LoginResult(new LoggedInUserView(data.email)));
+                } else {
+                    loginResult.postValue(new LoginResult(R.string.login_failed));
+                }
+            } catch (SQLiteConstraintException e) {
+                loginResult.postValue(new LoginResult(R.string.login_failed));
+            }
+
+        });
     }
 
     public void loginDataChanged(String username, String password) {
@@ -73,5 +99,9 @@ public class LoginViewModel extends ViewModel {
 
     public void setAppRepository(AppRepository appRepository) {
         this.appRepository = appRepository;
+    }
+
+    public MutableLiveData<LoginResult> getRegisterResult() {
+        return registerResult;
     }
 }

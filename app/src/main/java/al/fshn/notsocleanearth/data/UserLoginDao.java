@@ -3,6 +3,7 @@ package al.fshn.notsocleanearth.data;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
 import java.util.List;
@@ -19,10 +20,10 @@ public interface UserLoginDao {
 
     @Query("SELECT * FROM userlogin WHERE email LIKE :email AND " +
             "password LIKE :password LIMIT 1")
-    UserLogin findByName(String email, String password);
+    UserLogin findByNameAndPassword(String email, String password);
 
-    @Insert
-    void insertAll(UserLogin... users);
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    List<Long> insertAll(UserLogin... users);
 
     @Delete
     void delete(UserLogin user);

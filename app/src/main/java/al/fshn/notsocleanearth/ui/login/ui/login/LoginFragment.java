@@ -6,8 +6,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -63,9 +65,25 @@ public class LoginFragment extends Fragment {
         final TextInputLayout usernameTextLayout = view.findViewById(R.id.usernameTextField);
         final TextInputEditText usernameEditText = view.findViewById(R.id.username);
         final Button loginButton = view.findViewById(R.id.login);
+        final Button registerButton = view.findViewById(R.id.register);
         final TextInputLayout passwordTextLayout = view.findViewById(R.id.passwordTextField);
         final TextInputEditText passwordEditText = view.findViewById(R.id.password);
+        final TextInputLayout confirmPasswordTextLayout = view.findViewById(R.id.confirmPasswordTextField);
+        final TextInputEditText confirmPasswordEditText = view.findViewById(R.id.confirmPassword);
         final ProgressBar loadingProgressBar = view.findViewById(R.id.loading);
+
+        registerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (confirmPasswordTextLayout.getVisibility() == View.GONE) {
+                    confirmPasswordTextLayout.setVisibility(View.VISIBLE);
+                    loginButton.setEnabled(true);
+                } else {
+                    loginViewModel.register(usernameEditText.getText().toString(),
+                            passwordEditText.getText().toString(), confirmPasswordEditText.getText().toString());
+                }
+            }
+        });
 
         loginViewModel.getLoginFormState().observe(getViewLifecycleOwner(), new Observer<LoginFormState>() {
             @Override
@@ -73,7 +91,9 @@ public class LoginFragment extends Fragment {
                 if (loginFormState == null) {
                     return;
                 }
-                loginButton.setEnabled(loginFormState.isDataValid());
+                if (confirmPasswordTextLayout.getVisibility() == View.GONE) {
+                    loginButton.setEnabled(loginFormState.isDataValid());
+                }
                 if (loginFormState.getUsernameError() != null) {
                     usernameTextLayout.setErrorEnabled(true);
                     usernameTextLayout.setError(getString(loginFormState.getUsernameError()));
@@ -101,6 +121,22 @@ public class LoginFragment extends Fragment {
                 }
                 if (loginResult.getSuccess() != null) {
                     updateUiWithUser(loginResult.getSuccess());
+                }
+            }
+        });
+
+        loginViewModel.getRegisterResult().observe(getViewLifecycleOwner(), new Observer<LoginResult>() {
+            @Override
+            public void onChanged(LoginResult registerResult) {
+                if (registerResult == null) {
+                    return;
+                }
+                loadingProgressBar.setVisibility(View.GONE);
+                if (registerResult.getError() != null) {
+                    showLoginFailed(registerResult.getError());
+                }
+                if (registerResult.getSuccess() != null) {
+                    updateUiWithUser(registerResult.getSuccess());
                 }
             }
         });
@@ -139,19 +175,27 @@ public class LoginFragment extends Fragment {
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                loadingProgressBar.setVisibility(View.VISIBLE);
-                loginViewModel.login(usernameEditText.getText().toString(),
-                        passwordEditText.getText().toString());
+                if (confirmPasswordTextLayout.getVisibility() == View.VISIBLE) {
+                    confirmPasswordTextLayout.setVisibility(View.GONE);
+                    if (loginViewModel.getLoginFormState().getValue() != null) {
+                        loginButton.setEnabled(loginViewModel.getLoginFormState().getValue().isDataValid());
+                    } else {
+                        loginButton.setEnabled(false);
+                    }
+                } else {
+                    loadingProgressBar.setVisibility(View.VISIBLE);
+                    loginViewModel.login(usernameEditText.getText().toString(),
+                            passwordEditText.getText().toString());
+                }
             }
         });
     }
 
     private void updateUiWithUser(LoggedInUserView model) {
-        String welcome = getString(R.string.welcome) + model.getDisplayName();
-        // TODO : initiate successful logged in experience
-        if (getContext() != null && getContext().getApplicationContext() != null) {
-            Toast.makeText(getContext().getApplicationContext(), welcome, Toast.LENGTH_LONG).show();
-        }
+        NavHostFragment navHostFragment = (NavHostFragment) requireActivity()
+                .getSupportFragmentManager()
+                .findFragmentById(R.id.nav_host_fragment_activity_main);
+        navHostFragment.getNavController().navigate(R.id.action_loginFragment_to_navigation_home);
     }
 
     private void showLoginFailed(@StringRes Integer errorString) {
