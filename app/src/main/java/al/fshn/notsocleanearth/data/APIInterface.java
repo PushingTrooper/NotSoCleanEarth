@@ -7,9 +7,15 @@ import retrofit2.http.GET;
 import retrofit2.http.Query;
 
 public interface APIInterface {
-
     @GET("air_pollution/forecast")
     Call<AirPollutionForecast> getFuturePollution(
+            @Query("lat") Double latitude,
+            @Query("lon") Double longitude,
+            @Query("appid") String appId
+    );
+
+    @GET("air_pollution")
+    Call<AirPollutionForecast> getPollutionForCity(
             @Query("lat") Double latitude,
             @Query("lon") Double longitude,
             @Query("appid") String appId

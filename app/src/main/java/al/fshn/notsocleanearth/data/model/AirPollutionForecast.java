@@ -1,18 +1,17 @@
 package al.fshn.notsocleanearth.data.model;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class AirPollutionForecast{
     public Coord coord;
-    public ArrayList<List> list;
+    public ArrayList<Forecast> list;
 
     public class Coord{
         public double lon;
         public double lat;
     }
 
-    public class List{
+    public class Forecast {
         public Main main;
         public Components components;
         public int dt;

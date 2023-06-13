@@ -35,9 +35,11 @@ public class CitiesAdapter extends RecyclerView.Adapter<CitiesAdapter.ViewHolder
     }
 
     List<City> cities;
+    OnCityClickInterface onCityClickInterface;
 
-    CitiesAdapter(List<City> cities) {
+    CitiesAdapter(List<City> cities, OnCityClickInterface onCityClickInterface) {
         this.cities = cities;
+        this.onCityClickInterface = onCityClickInterface;
     }
 
     @NonNull
@@ -53,6 +55,13 @@ public class CitiesAdapter extends RecyclerView.Adapter<CitiesAdapter.ViewHolder
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         holder.getCityName().setText(cities.get(position).getName());
         holder.getCountryIn().setText(cities.get(position).getCountry());
+
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onCityClickInterface.onCLick(cities.get(holder.getAdapterPosition()));
+            }
+        });
     }
 
     @Override

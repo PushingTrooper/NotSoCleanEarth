@@ -17,6 +17,7 @@ import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.RecyclerView;
 
 import al.fshn.notsocleanearth.MyApplication;
 import al.fshn.notsocleanearth.R;
@@ -36,6 +37,8 @@ public class DashboardFragment extends Fragment {
     Location locationByGps = null;
     Location locationByNetwork = null;
 
+    RecyclerView forecastRecycler;
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         DashboardViewModel dashboardViewModel =
@@ -48,6 +51,8 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        forecastRecycler = view.findViewById(R.id.forecastRecycler);
 
         if (isLocationPermissionGranted()) {
             LocationManager locationManager = (LocationManager) requireActivity().getSystemService(Context.LOCATION_SERVICE);
@@ -110,9 +115,8 @@ public class DashboardFragment extends Fragment {
                 public void onResponse(Call<AirPollutionForecast> call, Response<AirPollutionForecast> response) {
                     Log.d("TAG", response.code() + "");
 
-//                Dogs resource = response.body();
-
-//                dogRecycler.setAdapter(new DogAdapter(response.body().dogPicsUrl));
+                    AirPollutionForecast resource = response.body();
+                    forecastRecycler.setAdapter(new ForecastAdapter(resource.list));
                 }
 
                 @Override
